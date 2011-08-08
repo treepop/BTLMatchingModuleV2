@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="windows-874"?>
+<VisualStudioPropertySheet
+	ProjectType="Visual C++"
+	Version="8.00"
+	Name="OpenCVDebug"
+	>
+	<Tool
+		Name="VCCLCompilerTool"
+		AdditionalIncludeDirectories="C:\OpenCV2.3\build\include"
+	/>
+	<Tool
+		Name="VCLinkerTool"
+		AdditionalDependencies="opencv_core230d.lib opencv_highgui230d.lib opencv_imgproc230d.lib opencv_features2d230d.lib opencv_calib3d230d.lib"
+		AdditionalLibraryDirectories="C:\OpenCV2.3\build\x86\vc9\lib"
+	/>
+</VisualStudioPropertySheet>
