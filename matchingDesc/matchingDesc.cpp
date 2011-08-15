@@ -1,3 +1,18 @@
+// Uncomment this for use on Android.
+// #define _USE_ON_ANDROID
+
+/*
+In file Matches.txt,define _JKDEBUG if you want to write sum of distance.
+Ex.	filename	\t	sumOfDistance
+	image_0008.jpg	5.76509
+	image_0002.jpg	6.10517
+*/
+// #define _JKDEBUG
+
+#ifdef _USE_ON_ANDROID
+#include <jni.h>
+#endif
+
 // C++ header.
 // ===========
 #include <iostream>
@@ -32,17 +47,37 @@ ofstream outFile; // Use together with function ShowResult.
 bool worseThan(const disStruct & r1,const disStruct & r2);
 void ShowResult(const disStruct & rr);
 
-int main()
+#ifdef _USE_ON_ANDROID
+JNIEXPORT void JNICALL Java_org_opencv_samples_tutorial3_Sample3View_FindFeatures(JNIEnv* env, jobject thiz)
+#else
+int main(int argc, char *argv[])
+#endif
 {
+	if(argc > 2)
+	{
+		cout << "Argument exceed 1 parameter.\n";
+		exit(EXIT_FAILURE);
+	}
+	
 	// Timer start.
 	clock_t tmStart = clock();
 	
-	string strDirFlowerDB = "flowerPicDB\\";
-	string strDirDescriptionDB = "descriptionDB\\";
+	string strRootProgram;
+	if(argc == 2)
+	{
+		strRootProgram = argv[1];
+		strRootProgram += "\\";
+	}
+	
+	// In android edit these strings.
+	string strDirFlowerDB = strRootProgram + "flowerPicDB\\";
+	string strDirDescriptionDB = strRootProgram + "descriptionDB\\";
 	string strFNameFlowerDB = strDirFlowerDB + "files.txt";
 	string strFNameFlower;
 	string strFNameDesc;
-	string strFNameUnknownFlower = "unknownFlower.jpg";
+	string strFNameUnknownFlower = strRootProgram + "unknownFlower.jpg";
+	// ------------------------------
+
 	ifstream inFile;
 	int count = 0;
 	int position = 0;
@@ -61,7 +96,9 @@ int main()
 	// Find number of photos.
 	// ======================
 	inFile.open(strFNameFlowerDB.c_str());
+#ifndef _USE_ON_ANDROID
 	if(!inFile.is_open()) cout << "Can't open file " << strFNameFlowerDB;
+#endif
 	while(inFile >> strFNameFlower)
 	{
 		count++;
@@ -69,7 +106,9 @@ int main()
 	inFile.close();
 	inFile.clear(); // If not clear() before it will make second while command finished
 					// immediately.
+#ifndef _USE_ON_ANDROID
 	cout << "Number of flower photo = " << count << endl << endl;
+#endif
 
 	// Read SURF description from DB.
 	// ==============================
@@ -77,7 +116,7 @@ int main()
 	vecKey *keypointDB = new vecKey[count];
 	Mat *descriptorDB = new Mat[count];
 
-	BruteForceMatcher<L2<float>> matcher;
+	BruteForceMatcher<L2<float> > matcher;
 	vecDMatch *resultOfMatchDB = new vecDMatch[count]; // Similarity between unknown and 
 													   // each in DB.
 	vector<disStruct> similarity; // The less distance the more similarity.
@@ -85,7 +124,9 @@ int main()
 	FileStorage inDescFile;
 	count = 0;
 	inFile.open(strFNameFlowerDB.c_str());
+#ifndef _USE_ON_ANDROID
 	if(!inFile.is_open()) cout << "Can't open file " << strFNameFlowerDB;
+#endif
 	while(inFile >> strFNameFlower)
 	{
 		// Read SURF description from DB.
@@ -93,9 +134,13 @@ int main()
 		strFNameDesc = strFNameFlower;
 		position = strFNameDesc.find("jpg",0);
 		strFNameDesc.replace(position,3,"yml");
+#ifndef _USE_ON_ANDROID
 		cout << "Read  " << strFNameDesc << endl;
+#endif
 		inDescFile.open(strDirDescriptionDB + strFNameDesc,FileStorage::READ);
+#ifndef _USE_ON_ANDROID
 		if(!inDescFile.isOpened()) cout << "Can't open file " << strFNameDesc;
+#endif
 		inDescFile["descriptionOfPic"] >> descriptorDB[count];
 		inDescFile.release();
 		
@@ -125,18 +170,25 @@ int main()
 	sort(similarity.begin(),similarity.end(),worseThan);
 
 	// Write similarity list to a file.
-	outFile.open("Matches.txt");
+	strRootProgram += "Matches.txt";
+	outFile.open(strRootProgram.c_str());
+#ifndef _USE_ON_ANDROID
 	if(!outFile.is_open()) cout << "Can't open file " << "Matches.txt";
+#endif
 	for_each(similarity.begin(),similarity.end(),ShowResult);
 	outFile.close();
 
 	// Timer stop.
 	clock_t tmStop = clock();
+#ifndef _USE_ON_ANDROID
 	cout << endl << "Total using time = " << (tmStop - tmStart)/CLOCKS_PER_SEC
 		<< " sec" << endl << "Pass enter to exit.";
+#endif
 
+#ifndef _USE_ON_ANDROID
 	getchar();
 	return 0;
+#endif
 }
 
 bool worseThan(const disStruct & r1,const disStruct & r2)
@@ -149,5 +201,9 @@ bool worseThan(const disStruct & r1,const disStruct & r2)
 
 void ShowResult(const disStruct & rr)
 {
+#ifdef _JKDEBUG
 	outFile << rr.strFNameOfPhoto << "\t" << rr.distance << endl;
+#else
+	outFile << rr.strFNameOfPhoto << endl;
+#endif
 }

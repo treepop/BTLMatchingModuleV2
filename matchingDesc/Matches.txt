@@ -1,10 +1,10 @@
-image_0008.jpg	5.76509
-image_0002.jpg	6.10517
-image_0003.jpg	6.14129
-image_0007.jpg	6.1683
-image_0006.jpg	6.19788
-image_0005.jpg	6.20051
-image_0010.jpg	6.44393
-image_0001.jpg	6.48324
-image_0004.jpg	6.5547
-image_0009.jpg	7.73219
+image_0008.jpg
+image_0002.jpg
+image_0003.jpg
+image_0007.jpg
+image_0006.jpg
+image_0005.jpg
+image_0010.jpg
+image_0001.jpg
+image_0004.jpg
+image_0009.jpg

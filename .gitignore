@@ -8,6 +8,7 @@
 *.obj
 *.dep
 *.idb
+*.yml
 ori_files.txt
 files.txt
 files.txt~
