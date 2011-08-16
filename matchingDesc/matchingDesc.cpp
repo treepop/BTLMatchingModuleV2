@@ -1,17 +1,18 @@
+// Option for this program.
+// ========================
+
+// 1.)
 // Uncomment this for use on Android.
-// #define _USE_ON_ANDROID
+#define _USE_ON_ANDROID
 
-/*
-In file Matches.txt,define _JKDEBUG if you want to write sum of distance.
-Ex.	filename	\t	sumOfDistance
-	image_0008.jpg	5.76509
-	image_0002.jpg	6.10517
-*/
-// #define _JKDEBUG
-
-#ifdef _USE_ON_ANDROID
-#include <jni.h>
-#endif
+// 2.)
+// In file Matches.txt,define _JKDEBUG if you want to write sum of distance.
+// Ex.	filename	\t	sumOfDistance
+//		image_0008.jpg	5.76509
+//		image_0002.jpg	6.10517
+//
+#define _JKDEBUG
+// ========================
 
 // C++ header.
 // ===========
@@ -27,6 +28,12 @@ Ex.	filename	\t	sumOfDistance
 #include <opencv2\core\core.hpp>
 #include <opencv2\highgui\highgui.hpp>
 #include <opencv2\features2d\features2d.hpp>
+
+// JNI header.
+// ===========
+#ifdef _USE_ON_ANDROID
+#include "com_img_jk_beethelion_MatchingLib.h"
+#endif
 
 using namespace std;
 using namespace cv;
@@ -48,30 +55,41 @@ bool worseThan(const disStruct & r1,const disStruct & r2);
 void ShowResult(const disStruct & rr);
 
 #ifdef _USE_ON_ANDROID
-JNIEXPORT void JNICALL Java_org_opencv_samples_tutorial3_Sample3View_FindFeatures(JNIEnv* env, jobject thiz)
+JNIEXPORT jstring JNICALL Java_com_img_jk_beethelion_MatchingLib_jkMatching
+	(JNIEnv *env, jclass obj, jstring jStrRootProgram)
 #else
 int main(int argc, char *argv[])
 #endif
 {
+#ifdef _USE_ON_ANDROID
+	// Convert JAVA string to UTF-8.
+	const char *pStr = env->GetStringUTFChars(jStrRootProgram,NULL);
+	string strRootProgram(pStr);
+	env->ReleaseStringUTFChars(jStrRootProgram,pStr);
+#else
 	if(argc > 2)
 	{
 		cout << "Argument exceed 1 parameter.\n";
 		exit(EXIT_FAILURE);
 	}
-	
-	// Timer start.
-	clock_t tmStart = clock();
-	
+
 	string strRootProgram;
 	if(argc == 2)
 	{
 		strRootProgram = argv[1];
-		strRootProgram += "\\";
+		strRootProgram += "/";
 	}
+#endif
 	
+	// Timer start.
+	clock_t tmStart = clock();
+		
 	// In android edit these strings.
-	string strDirFlowerDB = strRootProgram + "flowerPicDB\\";
-	string strDirDescriptionDB = strRootProgram + "descriptionDB\\";
+	// You can write either flowerPicDB\\ or flowerPicDB/ if it ran on windows.
+	// But you must write flowerPicDB/ if you ran on Android.
+	// Otherwise it cause of an error.
+	string strDirFlowerDB = strRootProgram + "flowerPicDB/";
+	string strDirDescriptionDB = strRootProgram + "descriptionDB/";
 	string strFNameFlowerDB = strDirFlowerDB + "files.txt";
 	string strFNameFlower;
 	string strFNameDesc;
@@ -185,7 +203,9 @@ int main(int argc, char *argv[])
 		<< " sec" << endl << "Pass enter to exit.";
 #endif
 
-#ifndef _USE_ON_ANDROID
+#ifdef _USE_ON_ANDROID
+	return env->NewStringUTF(strRootProgram.c_str());
+#else
 	getchar();
 	return 0;
 #endif
@@ -207,3 +227,13 @@ void ShowResult(const disStruct & rr)
 	outFile << rr.strFNameOfPhoto << endl;
 #endif
 }
+
+/*
+#ifdef _USE_ON_ANDROID
+JNIEXPORT void JNICALL Java_com_img_jk_beethelion_MatchingLib_jkMatching
+  (JNIEnv *env, jclass obj, jstring jStrRootProgram)
+{
+	return jkMatching(jStrRootProgram);
+}
+#endif
+*/
