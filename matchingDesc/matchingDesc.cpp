@@ -3,7 +3,7 @@
 
 // 1.)
 // Uncomment this for use on Android.
-#define _USE_ON_ANDROID
+// #define _USE_ON_ANDROID
 
 // 2.)
 // In file Matches.txt,define _JKDEBUG if you want to write sum of distance.
@@ -11,7 +11,7 @@
 //		image_0008.jpg	5.76509
 //		image_0002.jpg	6.10517
 //
-#define _JKDEBUG
+// #define _JKDEBUG
 // ========================
 
 // C++ header.
