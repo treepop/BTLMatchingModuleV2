@@ -21,7 +21,9 @@
 #include <fstream>
 #include <vector>
 #include <algorithm>
+#ifndef _USE_ON_ANDROID
 #include <ctime>
+#endif
 
 // OpenCV header.
 // ==============
@@ -41,7 +43,7 @@ using namespace cv;
 typedef vector<KeyPoint> vecKey;
 typedef vector<DMatch> vecDMatch;
 
-const int numTopSmall = 25; // Keep only top 25 lowest distance.
+const int numTopSmall = 7; // Keep only top 25 lowest distance.
 
 struct disStruct
 {
@@ -79,11 +81,11 @@ int main(int argc, char *argv[])
 		strRootProgram = argv[1];
 		strRootProgram += "/";
 	}
-#endif
-	
+
 	// Timer start.
 	clock_t tmStart = clock();
-		
+#endif
+
 	// In android edit these strings.
 	// You can write either flowerPicDB\\ or flowerPicDB/ if it ran on windows.
 	// But you must write flowerPicDB/ if you ran on Android.
@@ -115,7 +117,11 @@ int main(int argc, char *argv[])
 	// ======================
 	inFile.open(strFNameFlowerDB.c_str());
 #ifndef _USE_ON_ANDROID
-	if(!inFile.is_open()) cout << "Can't open file " << strFNameFlowerDB;
+	if(!inFile.is_open())
+	{
+		cout << "Can't open file " << strFNameFlowerDB << endl;
+		exit(EXIT_FAILURE);
+	}
 #endif
 	while(inFile >> strFNameFlower)
 	{
@@ -143,7 +149,11 @@ int main(int argc, char *argv[])
 	count = 0;
 	inFile.open(strFNameFlowerDB.c_str());
 #ifndef _USE_ON_ANDROID
-	if(!inFile.is_open()) cout << "Can't open file " << strFNameFlowerDB;
+	if(!inFile.is_open())
+	{
+		cout << "Can't open file " << strFNameFlowerDB << endl;
+		exit(EXIT_FAILURE);
+	}
 #endif
 	while(inFile >> strFNameFlower)
 	{
@@ -157,7 +167,11 @@ int main(int argc, char *argv[])
 #endif
 		inDescFile.open(strDirDescriptionDB + strFNameDesc,FileStorage::READ);
 #ifndef _USE_ON_ANDROID
-		if(!inDescFile.isOpened()) cout << "Can't open file " << strFNameDesc;
+		if(!inDescFile.isOpened())
+		{
+			cout << "Can't open file " << strFNameDesc << endl;
+			exit(EXIT_FAILURE);
+		}
 #endif
 		inDescFile["descriptionOfPic"] >> descriptorDB[count];
 		inDescFile.release();
@@ -191,14 +205,18 @@ int main(int argc, char *argv[])
 	strRootProgram += "Matches.txt";
 	outFile.open(strRootProgram.c_str());
 #ifndef _USE_ON_ANDROID
-	if(!outFile.is_open()) cout << "Can't open file " << "Matches.txt";
+	if(!outFile.is_open())
+	{
+		cout << "Can't open file " << "Matches.txt" << endl;
+		exit(EXIT_FAILURE);
+	}
 #endif
 	for_each(similarity.begin(),similarity.end(),ShowResult);
 	outFile.close();
 
+#ifndef _USE_ON_ANDROID
 	// Timer stop.
 	clock_t tmStop = clock();
-#ifndef _USE_ON_ANDROID
 	cout << endl << "Total using time = " << (tmStop - tmStart)/CLOCKS_PER_SEC
 		<< " sec" << endl << "Pass enter to exit.";
 #endif
