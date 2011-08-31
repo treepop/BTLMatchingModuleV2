@@ -3,7 +3,7 @@
 
 // 1.)
 // Uncomment this for use on Android.
-// #define _USE_ON_ANDROID
+#define _USE_ON_ANDROID
 
 // 2.)
 // In file Matches.txt,define _JKDEBUG if you want to write sum of distance.
@@ -51,13 +51,19 @@ struct disStruct
 	float distance;
 };
 
+struct outPutStruct
+{
+	string matchesPath;
+	int numVec;
+} outPut;
+
 ofstream outFile; // Use together with function ShowResult.
 
 bool worseThan(const disStruct & r1,const disStruct & r2);
 void ShowResult(const disStruct & rr);
 
 #ifdef _USE_ON_ANDROID
-JNIEXPORT jstring JNICALL Java_com_img_jk_beethelion_MatchingLib_jkMatching
+JNIEXPORT void JNICALL Java_com_img_jk_beethelion_MatchingLib_jkMatching
 	(JNIEnv *env, jclass obj, jstring jStrRootProgram)
 #else
 int main(int argc, char *argv[])
@@ -112,6 +118,9 @@ int main(int argc, char *argv[])
 	imgUnknownFlower = imread(strFNameUnknownFlower);
 	surf.detect(imgUnknownFlower,keypointOfUnknownFlower);
 	surfDesc.compute(imgUnknownFlower,keypointOfUnknownFlower,descriptorOfUnknowFlower);
+
+	// For debug.
+	outPut.numVec = descriptorOfUnknowFlower.rows;
 
 	// Find number of photos.
 	// ======================
@@ -218,11 +227,25 @@ int main(int argc, char *argv[])
 	// Timer stop.
 	clock_t tmStop = clock();
 	cout << endl << "Total using time = " << (tmStop - tmStart)/CLOCKS_PER_SEC
-		<< " sec" << endl << "Pass enter to exit.";
+		<< " sec" << endl;
+	cout << "Number of vector = " << outPut.numVec << endl;
+	cout << "Pass enter to exit.";
 #endif
 
 #ifdef _USE_ON_ANDROID
-	return env->NewStringUTF(strRootProgram.c_str());
+	outPut.matchesPath = strRootProgram;
+	
+	// Get the class.
+	jclass class_MatchingLib = env->FindClass("com/img/jk/beethelion/MatchingLib");
+	
+	// Get the field id.
+	jfieldID id_matchesPath = env->GetStaticFieldID(class_MatchingLib,"matchesPath","Ljava/lang/String;");
+	jfieldID id_numVec = env->GetStaticFieldID(class_MatchingLib,"numVec","I");
+
+	// Set the data value to the field.
+	jstring jStr = env->NewStringUTF(outPut.matchesPath.c_str());
+	env->SetStaticObjectField(class_MatchingLib,id_matchesPath,jStr);
+	env->SetStaticIntField(class_MatchingLib,id_numVec,outPut.numVec);
 #else
 	getchar();
 	return 0;
