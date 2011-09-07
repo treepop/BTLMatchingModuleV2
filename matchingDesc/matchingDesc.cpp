@@ -232,6 +232,36 @@ int main(int argc, char *argv[])
 	cout << "Pass enter to exit.";
 #endif
 
+	// Clear memory for memory leak correction.
+	// ========================================
+	imgUnknownFlower.release();
+	keypointOfUnknownFlower.clear();
+	descriptorOfUnknowFlower.release();
+
+	if(imgFlowerDB != NULL)
+	{
+		delete [] imgFlowerDB;
+		imgFlowerDB = NULL;
+	}
+	if(keypointDB != NULL)
+	{
+		delete [] keypointDB;
+		keypointDB = NULL;
+	}
+	if(descriptorDB != NULL)
+	{
+		delete [] descriptorDB;
+		descriptorDB = NULL;
+	}
+	matcher.clear();
+	if(resultOfMatchDB != NULL)
+	{
+		delete [] resultOfMatchDB;
+		resultOfMatchDB = NULL;
+	}
+	similarity.clear();
+	// ========================================
+
 #ifdef _USE_ON_ANDROID
 	outPut.matchesPath = strRootProgram;
 	
