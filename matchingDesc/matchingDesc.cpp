@@ -43,7 +43,7 @@ using namespace cv;
 typedef vector<KeyPoint> vecKey;
 typedef vector<DMatch> vecDMatch;
 
-const int numTopSmall = 7; // Keep only top 25 lowest distance.
+const int numTopSmall = 20; // Keep only top 25 lowest distance.
 
 struct disStruct
 {
@@ -121,6 +121,17 @@ int main(int argc, char *argv[])
 
 	// For debug.
 	outPut.numVec = descriptorOfUnknowFlower.rows;
+
+#ifdef _USE_ON_ANDROID
+	// Get the class.
+	jclass class_MatchingLib = env->FindClass("com/img/jk/beethelion/MatchingLib");
+
+	// Get the field id.
+	jfieldID id_numVec = env->GetStaticFieldID(class_MatchingLib,"numVec","I");
+
+	// Set the data value to the field.
+	env->SetStaticIntField(class_MatchingLib,id_numVec,outPut.numVec);
+#endif
 
 	// Find number of photos.
 	// ======================
@@ -265,17 +276,14 @@ int main(int argc, char *argv[])
 #ifdef _USE_ON_ANDROID
 	outPut.matchesPath = strRootProgram;
 	
-	// Get the class.
-	jclass class_MatchingLib = env->FindClass("com/img/jk/beethelion/MatchingLib");
+	
 	
 	// Get the field id.
 	jfieldID id_matchesPath = env->GetStaticFieldID(class_MatchingLib,"matchesPath","Ljava/lang/String;");
-	jfieldID id_numVec = env->GetStaticFieldID(class_MatchingLib,"numVec","I");
 
 	// Set the data value to the field.
 	jstring jStr = env->NewStringUTF(outPut.matchesPath.c_str());
 	env->SetStaticObjectField(class_MatchingLib,id_matchesPath,jStr);
-	env->SetStaticIntField(class_MatchingLib,id_numVec,outPut.numVec);
 #else
 	getchar();
 	return 0;
