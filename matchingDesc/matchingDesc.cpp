@@ -237,7 +237,7 @@ int main(int argc, char *argv[])
 #ifndef _USE_ON_ANDROID
 	// Timer stop.
 	clock_t tmStop = clock();
-	cout << endl << "Total using time = " << (tmStop - tmStart)/CLOCKS_PER_SEC
+	cout << endl << "Total using time = " << float(tmStop - tmStart)/CLOCKS_PER_SEC
 		<< " sec" << endl;
 	cout << "Number of vector = " << outPut.numVec << endl;
 	cout << "Pass enter to exit.";
