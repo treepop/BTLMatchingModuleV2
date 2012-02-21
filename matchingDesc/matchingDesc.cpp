@@ -3,15 +3,21 @@
 
 // 1.)
 // Uncomment this for use on Android.
-#define _USE_ON_ANDROID
+// #define _USE_ON_ANDROID
 
 // 2.)
 // In file Matches.txt,define _JKDEBUG if you want to write sum of distance.
-// Ex.	filename	\t	sumOfDistance
-//		image_0008.jpg	5.76509
-//		image_0002.jpg	6.10517
+// Ex.	0008_4.jpg	120991	18	1.49365	0	18
+//		0032_3.jpg	114101	9	1.74578	13	22
 //
-// #define _JKDEBUG
+//		0008_4.jpg	= File name of flower template.
+//		120991		= Sum of HSV distance.
+//		18			= Rank by HSV color feature.
+//		1.49365		= Sum of Surf distance.
+//		0			= Rank by Surf shape feature.
+//		18			= Rank by both color and shape features.
+//		Each fields was separated by TAB.
+#define _JKDEBUG
 // ========================
 
 // C++ header.
@@ -37,18 +43,27 @@
 #include "com_img_jk_beethelion_MatchingLib.h"
 #endif
 
+// User header.
+// ============
+#include "beeConfig.h"
+#include "jkImageProcessingClass.h"
+
 using namespace std;
 using namespace cv;
 
 typedef vector<KeyPoint> vecKey;
 typedef vector<DMatch> vecDMatch;
 
-const int numTopSmall = 20; // Keep only top 25 lowest distance.
+const int numTopSmall = NUMTOPSMALL; // Keep only top 25 lowest distance.
 
 struct disStruct
 {
 	string strFNameOfPhoto;
-	float distance;
+	double distanceOfHSV;
+	int rankOfHSV;
+	float distanceOfSurf;
+	int rankOfSurf;
+	int distanceSumOfSurfAndColor;
 };
 
 struct outPutStruct
@@ -61,6 +76,8 @@ ofstream outFile; // Use together with function ShowResult.
 
 bool worseThan(const disStruct & r1,const disStruct & r2);
 void ShowResult(const disStruct & rr);
+bool sortByColor(const disStruct & r1,const disStruct & r2);
+bool sortByShape(const disStruct & r1,const disStruct & r2);
 
 #ifdef _USE_ON_ANDROID
 JNIEXPORT void JNICALL Java_com_img_jk_beethelion_MatchingLib_jkMatching
@@ -102,25 +119,36 @@ int main(int argc, char *argv[])
 	string strFNameFlower;
 	string strFNameDesc;
 	string strFNameUnknownFlower = strRootProgram + "unknownFlower.jpg";
+	string strFNameDescTemp;
 	// ------------------------------
 
 	ifstream inFile;
 	int count = 0;
-	int position = 0;
+	string::size_type idx;
 
 	// Extract SURF feature of unknown flower.
 	// =======================================
 	Mat imgUnknownFlower;
 	vecKey keypointOfUnknownFlower;
+	Mat descriptorOfUnknowFlower;
 	SurfFeatureDetector surf(2500.);
 	SurfDescriptorExtractor surfDesc;
-	Mat descriptorOfUnknowFlower;
 	imgUnknownFlower = imread(strFNameUnknownFlower);
 	surf.detect(imgUnknownFlower,keypointOfUnknownFlower);
 	surfDesc.compute(imgUnknownFlower,keypointOfUnknownFlower,descriptorOfUnknowFlower);
 
 	// For debug.
 	outPut.numVec = descriptorOfUnknowFlower.rows;
+
+	// Extract color feature of unknown flower.
+	// ========================================
+	HistogramHSV hsvObj;
+	cv::Mat imgTempROIOfUnknownFlower = getCenterOfImage(imgUnknownFlower,CENTER);
+	MatND hueHistogramOfUnknownFlower = hsvObj.getHueHistogram(imgTempROIOfUnknownFlower);
+	MatND saturationHistogramOfUnknownFlower = hsvObj.getSaturationHistogram(
+												imgTempROIOfUnknownFlower);
+	MatND valueHistogramOfUnknownFlower = hsvObj.getValueHistogram(
+											imgTempROIOfUnknownFlower);
 
 #ifdef _USE_ON_ANDROID
 	// Get the class.
@@ -148,24 +176,34 @@ int main(int argc, char *argv[])
 		count++;
 	}
 	inFile.close();
-	inFile.clear(); // If not clear() before it will make second while command finished
+	inFile.clear(); // If not clear() before it will make second otherwise command finished
 					// immediately.
 #ifndef _USE_ON_ANDROID
 	cout << "Number of flower photo = " << count << endl << endl;
 #endif
 
-	// Read SURF description from DB.
-	// ==============================
-	Mat *imgFlowerDB = new Mat[count];
-	vecKey *keypointDB = new vecKey[count];
+	// Read all description from DB.
+	// =============================
+	// Array of shape feature.
 	Mat *descriptorDB = new Mat[count];
+	// Array of colour feature.
+	MatND *hueHistogram = new MatND[count];
+	MatND *saturationHistogram = new MatND[count];
+	MatND *valueHistogram = new MatND[count];
 
 	BruteForceMatcher<L2<float> > matcher;
 	vecDMatch *resultOfMatchDB = new vecDMatch[count]; // Similarity between unknown and 
-													   // each in DB.
+													   // each flowers in DB.
+	ImageComparator imgCompObj;
 	vector<disStruct> similarity; // The less distance the more similarity.
 	disStruct temp;
-	FileStorage inDescFile;
+	temp.strFNameOfPhoto = "";
+	temp.distanceOfHSV = 0;
+	temp.rankOfHSV = 0;
+	temp.distanceOfSurf = 0;
+	temp.rankOfSurf = 0;
+	temp.distanceSumOfSurfAndColor = 0;
+	FileStorage inDescFileSurf,inDescFileH,inDescFileS,inDescFileV;
 	count = 0;
 	inFile.open(strFNameFlowerDB.c_str());
 #ifndef _USE_ON_ANDROID
@@ -180,44 +218,140 @@ int main(int argc, char *argv[])
 		// Read SURF description from DB.
 		// Find each name of yml files.
 		strFNameDesc = strFNameFlower;
-		position = strFNameDesc.find("jpg",0);
-		strFNameDesc.replace(position,3,"yml");
+		idx = strFNameDesc.find('.');
+		strFNameDesc = strFNameDesc.substr(0,idx);
+
+		// Read shape feature from DB.
+		// ===========================
+		strFNameDescTemp = strFNameDesc + "Surf" + ".yml";
 #ifndef _USE_ON_ANDROID
-		cout << "Read  " << strFNameDesc << endl;
+		cout << "Read  " << strFNameDescTemp << endl;
 #endif
-		inDescFile.open(strDirDescriptionDB + strFNameDesc,FileStorage::READ);
+		inDescFileSurf.open(strDirDescriptionDB + strFNameDescTemp,FileStorage::READ);
 #ifndef _USE_ON_ANDROID
-		if(!inDescFile.isOpened())
+		if(!inDescFileSurf.isOpened())
 		{
-			cout << "Can't open file " << strFNameDesc << endl;
+			cout << "Can't open file " << strFNameDescTemp << endl;
 			exit(EXIT_FAILURE);
 		}
 #endif
-		inDescFile["descriptionOfPic"] >> descriptorDB[count];
-		inDescFile.release();
+		inDescFileSurf["descriptionSurfOfPic"] >> descriptorDB[count];
+		inDescFileSurf.release();
+
+		// Read color feature (hue) from DB.
+		// =================================
+		strFNameDescTemp = strFNameDesc + "H" + ".yml";
+#ifndef _USE_ON_ANDROID
+		cout << "Read  " << strFNameDescTemp << endl;
+#endif
+		inDescFileH.open(strDirDescriptionDB + strFNameDescTemp,FileStorage::READ);
+#ifndef _USE_ON_ANDROID
+		if(!inDescFileH.isOpened())
+		{
+			cout << "Can't open file " << strFNameDescTemp << endl;
+			exit(EXIT_FAILURE);
+		}
+#endif
+		inDescFileH["descriptionHOfPic"] >> hueHistogram[count];
+		inDescFileH.release();
+
+		// Read color feature (saturation) from DB.
+		// ========================================
+		strFNameDescTemp = strFNameDesc + "S" + ".yml";
+#ifndef _USE_ON_ANDROID
+		cout << "Read  " << strFNameDescTemp << endl;
+#endif
+		inDescFileS.open(strDirDescriptionDB + strFNameDescTemp,FileStorage::READ);
+#ifndef _USE_ON_ANDROID
+		if(!inDescFileS.isOpened())
+		{
+			cout << "Can't open file " << strFNameDescTemp << endl;
+			exit(EXIT_FAILURE);
+		}
+#endif
+		inDescFileS["descriptionSOfPic"] >> saturationHistogram[count];
+		inDescFileS.release();
+
+		// Read color feature (value) from DB.
+		// ===================================
+		strFNameDescTemp = strFNameDesc + "V" + ".yml";
+#ifndef _USE_ON_ANDROID
+		cout << "Read  " << strFNameDescTemp << endl;
+#endif
+		inDescFileV.open(strDirDescriptionDB + strFNameDescTemp,FileStorage::READ);
+#ifndef _USE_ON_ANDROID
+		if(!inDescFileV.isOpened())
+		{
+			cout << "Can't open file " << strFNameDescTemp << endl;
+			exit(EXIT_FAILURE);
+		}
+#endif
+		inDescFileV["descriptionVOfPic"] >> valueHistogram[count];
+		inDescFileV.release();
 		
+		// Matching section.
+		// =================
 		// Matching each description point of unknown flower with each photo in DB.
+
+		// Calculate similarity from shape features.
+		// =========================================
 		matcher.match(descriptorOfUnknowFlower,descriptorDB[count]
 			,resultOfMatchDB[count]);
 		// Sort and get top 25 lowest distance vector.
+		// In 25 numbers don't sort but not have a problem.
 		nth_element(resultOfMatchDB[count].begin()
 			,resultOfMatchDB[count].begin()+numTopSmall-1
 			,resultOfMatchDB[count].end());
 		resultOfMatchDB[count].erase(resultOfMatchDB[count].begin()+numTopSmall
 			,resultOfMatchDB[count].end());
 		// Sum all 25 distance. if which photo has less number more similarity.
-		float sum = 0;
+		float sumShape = 0;
 		for(int i=0;i<numTopSmall;i++)
 		{
-			sum += resultOfMatchDB[count][i].distance;
+			sumShape += resultOfMatchDB[count][i].distance;
 		}
 		temp.strFNameOfPhoto = strFNameFlower;
-		temp.distance = sum;
+		temp.distanceOfSurf = sumShape;
+
+		// Calculate similarity from color features.
+		// =========================================
+		imgCompObj.setRefHistogram(hueHistogram[count],
+									saturationHistogram[count],
+									valueHistogram[count]);
+		temp.distanceOfHSV = imgCompObj.compareWithHist(hueHistogramOfUnknownFlower,
+														saturationHistogramOfUnknownFlower,
+														valueHistogramOfUnknownFlower);
+
+		// Sum of shape and color feature.
+		// ===============================
+		/* temp.distanceSumOfSurfAndColor = static_cast<double>(temp.distanceOfSurf) +
+											temp.distanceOfHSV; */
+
 		similarity.push_back(temp);
+
 		count++;
 	}
 	inFile.close();
 
+	int choice = FEATURE;
+
+	if(choice == 3)
+	{
+		int max = similarity.size();
+		
+		// Get order by color feature.
+		sort(similarity.begin(),similarity.end(),sortByColor);
+		for(int i=0;i<max;i++)
+			similarity[i].rankOfHSV = i;
+		// Get order by shape feature.
+		sort(similarity.begin(),similarity.end(),sortByShape);
+		for(int i=0;i<max;i++)
+			similarity[i].rankOfSurf = i;
+		for(int i=0;i<max;i++)
+			similarity[i].distanceSumOfSurfAndColor = similarity[i].rankOfHSV
+													+ similarity[i].rankOfSurf;
+	}
+	
 	// Sort list lowest on the top indicate more similarity.
 	sort(similarity.begin(),similarity.end(),worseThan);
 
@@ -249,20 +383,30 @@ int main(int argc, char *argv[])
 	keypointOfUnknownFlower.clear();
 	descriptorOfUnknowFlower.release();
 
-	if(imgFlowerDB != NULL)
-	{
-		delete [] imgFlowerDB;
-		imgFlowerDB = NULL;
-	}
-	if(keypointDB != NULL)
-	{
-		delete [] keypointDB;
-		keypointDB = NULL;
-	}
+	imgTempROIOfUnknownFlower.release();
+	hueHistogramOfUnknownFlower.release();
+	saturationHistogramOfUnknownFlower.release();
+	valueHistogramOfUnknownFlower.release();
+
 	if(descriptorDB != NULL)
 	{
 		delete [] descriptorDB;
 		descriptorDB = NULL;
+	}
+	if(hueHistogram != NULL)
+	{
+		delete [] hueHistogram;
+		hueHistogram = NULL;
+	}
+	if(saturationHistogram != NULL)
+	{
+		delete [] saturationHistogram;
+		saturationHistogram = NULL;
+	}
+	if(valueHistogram != NULL)
+	{
+		delete [] valueHistogram;
+		valueHistogram = NULL;
 	}
 	matcher.clear();
 	if(resultOfMatchDB != NULL)
@@ -270,13 +414,12 @@ int main(int argc, char *argv[])
 		delete [] resultOfMatchDB;
 		resultOfMatchDB = NULL;
 	}
+	imgCompObj.clearMem();
 	similarity.clear();
 	// ========================================
 
 #ifdef _USE_ON_ANDROID
 	outPut.matchesPath = strRootProgram;
-	
-	
 	
 	// Get the field id.
 	jfieldID id_matchesPath = env->GetStaticFieldID(class_MatchingLib,"matchesPath","Ljava/lang/String;");
@@ -292,7 +435,49 @@ int main(int argc, char *argv[])
 
 bool worseThan(const disStruct & r1,const disStruct & r2)
 {
-	if(r1.distance < r2.distance)
+	int choice = FEATURE;
+
+	// Sort by color feature.
+	if(choice == 1)
+	{
+		if(r1.distanceOfHSV < r2.distanceOfHSV)
+			return true;
+		else
+			return false;
+	}
+
+	// Sort by shape feature.
+	if(choice == 2)
+	{
+		if(r1.distanceOfSurf < r2.distanceOfSurf)
+			return true;
+		else
+			return false;
+	}
+
+	// Sort by both color and shape feature.
+	if(choice == 3)
+	{
+		if(r1.distanceSumOfSurfAndColor < r2.distanceSumOfSurfAndColor)
+			return true;
+		else
+			return false;
+	}
+}
+
+bool sortByColor(const disStruct & r1,const disStruct & r2)
+// Sort by color feature.
+{
+	if(r1.distanceOfHSV < r2.distanceOfHSV)
+		return true;
+	else
+		return false;
+}
+
+bool sortByShape(const disStruct & r1,const disStruct & r2)
+// Sort by shape feature.
+{
+	if(r1.distanceOfSurf < r2.distanceOfSurf)
 		return true;
 	else
 		return false;
@@ -301,7 +486,10 @@ bool worseThan(const disStruct & r1,const disStruct & r2)
 void ShowResult(const disStruct & rr)
 {
 #ifdef _JKDEBUG
-	outFile << rr.strFNameOfPhoto << "\t" << rr.distance << endl;
+	outFile << rr.strFNameOfPhoto << "\t" << rr.distanceOfHSV << "\t" << rr.rankOfHSV
+									<< "\t" << rr.distanceOfSurf << "\t" << rr.rankOfSurf
+									<< "\t" << rr.distanceSumOfSurfAndColor
+									<< endl;
 #else
 	outFile << rr.strFNameOfPhoto << endl;
 #endif

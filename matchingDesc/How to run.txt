@@ -1,0 +1,6 @@
+เปิด VC++2008
+เลือก BeeTheLionMatchingModuleV2
+Build -> Project Only -> Build Only extractDesc
+ใน D:\Practice\BeeTheLionMatchingModuleV2\Release จะมี extractDesc.exe
+ให้ move ไปที่ D:\Practice\BeeTheLionMatchingModuleV2\matchingDesc
+แล้วก็ double click run เลย
