@@ -17,3 +17,6 @@ matchingDesc/ดอกไม้พลาสติก
 unknownFlower.jpg
 Matches.txt
 *.user
+matchingDesc/test image/*.jpg
+showRank/Debug/
+showRank/Release/

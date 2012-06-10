@@ -428,7 +428,7 @@ int main(int argc, char *argv[])
 	jstring jStr = env->NewStringUTF(outPut.matchesPath.c_str());
 	env->SetStaticObjectField(class_MatchingLib,id_matchesPath,jStr);
 #else
-	getchar();
+	// getchar();
 	return 0;
 #endif
 }
