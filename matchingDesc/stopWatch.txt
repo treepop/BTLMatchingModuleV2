@@ -1,0 +1,10 @@
+NB æ’Ë°ÿÈß
+DEBUG
+/c=1		8.546 sec
+/s=1		322.437 sec
+/c=1 /s=1	380.968 sec
+
+RELEASE
+/c=1		5.421 sec
+/s=1		94.812 sec
+/c=1 /s=1	93.515 sec

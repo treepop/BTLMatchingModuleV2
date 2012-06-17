@@ -17,6 +17,11 @@ matchingDesc/ดอกไม้พลาสติก
 unknownFlower.jpg
 Matches.txt
 *.user
-matchingDesc/test image/*.jpg
+matchingDesc/testImage/*.jpg
+matchingDesc/testImage/u*.txt
 showRank/Debug/
 showRank/Release/
+batchRun/Debug/
+batchRun/Release/
+matchingDesc/out.txt
+showRank/Rank.txt

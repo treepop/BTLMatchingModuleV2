@@ -1,0 +1,22 @@
+unknownFlower0081.jpg	Don't know class.
+unknownFlower0091.jpg	Don't know class.
+unknownFlower0106.jpg	Don't know class.
+unknownFlower0015.jpg	26	Number of vector = 10
+unknownFlower0016.jpg	26	Number of vector = 18
+unknownFlower0019.jpg	26	Number of vector = 20
+unknownFlower0020.jpg	26	Number of vector = 26
+unknownFlower0032.jpg	26	Number of vector = 29
+unknownFlower0034.jpg	10	Number of vector = 3
+unknownFlower0042.jpg	26	Number of vector = 3
+unknownFlower0043.jpg	26	Number of vector = 5
+unknownFlower0044.jpg	26	Number of vector = 4
+unknownFlower0045.jpg	26	Number of vector = 13
+unknownFlower0046.jpg	26	Number of vector = 13
+unknownFlower0047.jpg	26	Number of vector = 10
+unknownFlower0059.jpg	8	Number of vector = 3
+unknownFlower0120.jpg	26	Number of vector = 4
+unknownFlower0201.jpg	3	Number of vector = 28
+unknownFlower0205.jpg	11	Number of vector = 19
+unknownFlower0233.jpg	3	Number of vector = 29
+unknownFlower0234.jpg	3	Number of vector = 17
+unknownFlower0235.jpg	3	Number of vector = 24

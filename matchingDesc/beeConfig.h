@@ -10,3 +10,6 @@
  * 3 for use both color and shape feature.
  */
 #define FEATURE 1
+
+/* If the answer was in TOPN, it indicate that correct. */
+#define TOPN 8
