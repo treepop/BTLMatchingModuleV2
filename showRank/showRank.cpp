@@ -35,7 +35,11 @@ int main()
 	// Find number of photos.
 	// ======================
 	inFile.open(strFNameTestImageDB.c_str());
-	if(!inFile.is_open()) cout << "Can't open file " << strFNameTestImageDB << endl;
+	if(!inFile.is_open())
+	{
+		cout << "Can't open file " << strFNameTestImageDB << endl;
+		exit(EXIT_FAILURE);
+	}
 	while(getline(inFile,strOneLine))
 	{
 		count++;
@@ -51,7 +55,11 @@ int main()
 	// Process each test image.
 	// ========================
 	inFile.open(strFNameTestImageDB.c_str());
-	if(!inFile.is_open()) cout << "Can't open file " << strFNameTestImageDB << endl;
+	if(!inFile.is_open())
+	{
+		cout << "Can't open file " << strFNameTestImageDB << endl;
+		exit(EXIT_FAILURE);
+	}
 	string::size_type idxTab; // A position of '\t'.
 	string strFNameTestImage;
 	count = 0; // Reset count to 0.
@@ -61,7 +69,10 @@ int main()
 	{
 		idxTab = strOneLine.find('\t');
 		if(idxTab == string::npos)
+		{
 			cout << strOneLine << " doesn't have TAB\n";
+			exit(EXIT_FAILURE);
+		}
 		strFNameTestImage = strOneLine.substr(0,idxTab);
 		answer[count] = atoi(strOneLine.substr(idxTab+1).c_str());
 
