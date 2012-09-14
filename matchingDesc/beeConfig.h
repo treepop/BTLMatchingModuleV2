@@ -12,4 +12,10 @@
 #define FEATURE 1
 
 /* If the answer was in TOPN, it indicate that correct. */
-#define TOPN 8
+#define TOPN 5
+
+/* Algorithms for performance measurement.
+ * 1 for weight equal.
+ * 2 for weight vary.
+ */
+#define PERFMEA 2

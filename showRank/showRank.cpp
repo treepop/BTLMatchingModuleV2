@@ -12,6 +12,10 @@
 
 using namespace std;
 
+// Function prototype.
+// ===================
+float weightNilsback(int,int);
+
 int main()
 {
 	// Timer start.
@@ -63,7 +67,8 @@ int main()
 	string::size_type idxTab; // A position of '\t'.
 	string strFNameTestImage;
 	count = 0; // Reset count to 0.
-	int iCorrect = 0,iTotal = 0;
+	float fCorrect = 0.0F;
+	int iTotal = 0;
 
 	while(getline(inFile,strOneLine))
 	{
@@ -105,14 +110,19 @@ int main()
 		for(int i=0;i<TOPN;i++)
 		{
 			if(answer[count] == atoi(rank[i].c_str()))
-				iCorrect++;
+			{
+				if(1 == PERFMEA)
+					fCorrect += 100.0F;
+				else if(2 == PERFMEA)
+					fCorrect += weightNilsback(i+1,TOPN);
+			}
 		}
 		iTotal++;
 		count++;
 	}
 	inFile.close();
 	
-	float fAccuracy = (float)iCorrect/(float)iTotal*100.0F;
+	float fAccuracy = fCorrect/iTotal;
 
 	outFile.open(strOutputRankFile.c_str());
 	if(!outFile.is_open())
@@ -120,7 +130,7 @@ int main()
 		cout << "Can't open file " << strOutputRankFile << endl;
 		exit(EXIT_FAILURE);
 	}
-	outFile << fAccuracy;
+	outFile << fAccuracy  << "%";
 	outFile.close();
 	cout << endl << fAccuracy << " %";
 
@@ -132,4 +142,22 @@ int main()
 
 	//getchar();
 	return 0;
+}
+
+float weightNilsback(int i,int S)
+{
+	float w;
+	
+	if(i==0)
+	{
+		cout << "Error rank = 0" << endl;
+		exit(EXIT_FAILURE);
+	}
+
+	if(i>S)
+		return 0.0F;
+
+	w = 100 - 20 *(i-1.0F)/(S-1);
+
+	return w;
 }
