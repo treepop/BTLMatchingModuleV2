@@ -24,12 +24,14 @@ int main()
 	//string strInputDistanceFile = "Matches.txt";
 	string strDirTestImageDB = "testImage\\"; // The folder of test image.
 	string strFNameTestImageDB = strDirTestImageDB + "testFlowerList.txt"; // List of test image and the answer.
+	string strOutputAccFile = "Accuracy.txt";
 	string strOutputRankFile = "Rank.txt";
 	string strBaseName;
 	string strOneLine;
 	ifstream inFile;
 	ifstream inMFile;
 	ofstream outFile;
+	ofstream outRFile;
 	vector<string> rank;
 	string::size_type idxUnderScroll; // A position of '_'.
 	vector<string>::iterator pos;
@@ -70,6 +72,16 @@ int main()
 	float fCorrect = 0.0F;
 	int iTotal = 0;
 
+	// Remove old Rank file.
+	outRFile.open(strOutputRankFile.c_str());
+	if(!outRFile.is_open())
+	{
+		cout << "Can't open file " << strOutputRankFile << endl;
+		exit(EXIT_FAILURE);
+	}
+	outRFile.close();
+	outRFile.clear();
+
 	while(getline(inFile,strOneLine))
 	{
 		idxTab = strOneLine.find('\t');
@@ -85,11 +97,12 @@ int main()
 		idxDot = strFNameTestImage.find_last_of('.');
 		string strFNameMatch = strDirTestImageDB + strFNameTestImage.substr(0,idxDot) + "M" + ".txt";
 		inMFile.open(strFNameMatch.c_str());
-		if(!inFile.is_open())
+		if(!inMFile.is_open())
 		{
 			cout << "Can't open file " << strFNameMatch << endl;
 			exit(EXIT_FAILURE);
 		}
+		rank.clear();
 		while(getline(inMFile,strOneLine))
 		{
 			idxUnderScroll = strOneLine.find('_');
@@ -107,14 +120,24 @@ int main()
 		inMFile.close();
 		inMFile.clear();
 
-		for(int i=0;i<TOPN;i++)
+		for(int i=0;i<45;i++)
 		{
 			if(answer[count] == atoi(rank[i].c_str()))
 			{
-				if(1 == PERFMEA)
+				if(1 == PERFMEA && i<TOPN)
 					fCorrect += 100.0F;
-				else if(2 == PERFMEA)
+				else if(2 == PERFMEA && i<TOPN)
 					fCorrect += weightNilsback(i+1,TOPN);
+
+				outRFile.open(strOutputRankFile.c_str(),ios_base::app);
+				if(!outRFile.is_open())
+				{
+					cout << "Can't open file " << strOutputRankFile << endl;
+					exit(EXIT_FAILURE);
+				}
+				outRFile << strFNameTestImage << "\t" << i+1 << endl;
+				outRFile.close();
+				outRFile.clear();
 			}
 		}
 		iTotal++;
@@ -124,10 +147,10 @@ int main()
 	
 	float fAccuracy = fCorrect/iTotal;
 
-	outFile.open(strOutputRankFile.c_str());
+	outFile.open(strOutputAccFile.c_str());
 	if(!outFile.is_open())
 	{
-		cout << "Can't open file " << strOutputRankFile << endl;
+		cout << "Can't open file " << strOutputAccFile << endl;
 		exit(EXIT_FAILURE);
 	}
 	outFile << fAccuracy  << "%";
