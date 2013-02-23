@@ -59,7 +59,6 @@ typedef vector<DMatch> vecDMatch;
 
 // Global variable.
 // ================
-// int numTopSmall = NUMTOPSMALL; // Keep only top 25 lowest distance.
 
 bool bUseColorFeature = false;
 int iColorFeature = CENTER;
@@ -68,7 +67,7 @@ bool bUseWeightColor = false;
 float fWeightColor = 0.5F;
 
 bool bUseShapeFeature = false;
-int iShapeFeature = NUMTOPSMALL;
+int iShapeFeature = NUMTOPSMALL; // Keep only top 25 lowest distance.
 
 bool bUseWeightShape = false;
 float fWeightShape = 0.5F;
@@ -95,7 +94,7 @@ ofstream outFile; // Use together with function ShowResult.
 // Function prototype.
 // ===================
 bool worseThan(const disStruct & r1,const disStruct & r2);
-void ShowResult(const disStruct & rr);
+void WriteResult(const disStruct & rr);
 bool sortByColor(const disStruct & r1,const disStruct & r2);
 bool sortByShape(const disStruct & r1,const disStruct & r2);
 void showHowToUse(const char *);
@@ -120,8 +119,8 @@ int main(int argc, char *argv[])
 		showHowToUse(argv[0]);
 	}
 
-	if(argc > 6)
-	{
+	if(argc > 6) // matchingDesc.exe /c=300 /wc=.5 /s=7 /ws=.5 unknownFlower.jpg
+	{			 //         0          1       2     3     4          5
 		cout << "Argument exceed 5 parameter.\n";
 		exit(EXIT_FAILURE);
 	}
@@ -133,7 +132,7 @@ int main(int argc, char *argv[])
 		strRootProgram += "/";
 	}*/
 
-	for(int i=1;i<argc-1;i++)
+	for(int i=1;i<argc-1;i++) // It does not process the last argument.
 	{
 		string strTemp = argv[i];
 
@@ -176,7 +175,7 @@ int main(int argc, char *argv[])
 		exit(1);
 	}
 
-	if(XOR(bUseWeightColor,bUseWeightShape))
+	if(bUseWeightColor && bUseWeightShape)
 	{
 		if((fWeightColor + fWeightShape) != 1.0) // May be you can write 1 instead of 1.0 .
 		{
@@ -469,6 +468,7 @@ int main(int argc, char *argv[])
 		// ===============================
 		/* temp.distanceSumOfSurfAndColor = static_cast<double>(temp.distanceOfSurf) +
 											temp.distanceOfHSV; */
+		// Because distanceOfSurf is float but distanceOfHSV is double.
 
 		similarity.push_back(temp);
 
@@ -495,18 +495,22 @@ int main(int argc, char *argv[])
 		// Get order by color feature.
 		sort(similarity.begin(),similarity.end(),sortByColor);
 		for(int i=0;i<max;i++)
-			similarity[i].rankOfHSV = i+1;
+			similarity[i].rankOfHSV = ((i/10)+1)*100;
 		// Get order by shape feature.
 		sort(similarity.begin(),similarity.end(),sortByShape);
 		for(int i=0;i<max;i++)
 			similarity[i].rankOfSurf = i+1;
 		for(int i=0;i<max;i++)
+			/* Old equation
 			similarity[i].distanceSumOfSurfAndColor = 
-				similarity[i].rankOfHSV * (int)(fWeightColor * 100.0F)
-				+ similarity[i].rankOfSurf * (int)(fWeightShape * 100.0F);
+				similarity[i].rankOfHSV * (int)(fWeightShape * 100.0F)
+				+ similarity[i].rankOfSurf * (int)(fWeightColor * 100.0F); */
+
+			similarity[i].distanceSumOfSurfAndColor = 
+				similarity[i].rankOfHSV + similarity[i].rankOfSurf;
 	}
 	
-	// Sort list lowest on the top indicate more similarity.
+	// Sort list which lowest on the top indicate more similarity.
 	sort(similarity.begin(),similarity.end(),worseThan);
 
 	// Write similarity list to a file.
@@ -524,7 +528,7 @@ int main(int argc, char *argv[])
 		exit(EXIT_FAILURE);
 	}
 #endif
-	for_each(similarity.begin(),similarity.end(),ShowResult);
+	for_each(similarity.begin(),similarity.end(),WriteResult);
 	outFile.close();
 
 #ifndef _USE_ON_ANDROID
@@ -652,7 +656,7 @@ bool sortByShape(const disStruct & r1,const disStruct & r2)
 		return false;
 }
 
-void ShowResult(const disStruct & rr)
+void WriteResult(const disStruct & rr)
 {
 #ifdef _JKDEBUG
 	outFile << rr.strFNameOfPhoto << "\t" << rr.distanceOfHSV << "\t" << rr.rankOfHSV
@@ -688,13 +692,15 @@ void showHowToUse(const char *ptrCharFNameOfProgram)
 
 	cout << "Example of using.\n";
 	cout << "=================\n";
-	cout << strFNameOnly << " /c=100 /s=5\n";
-	cout << strFNameOnly << " /c=300 /wc=.5 /s=7 /ws=.5\n";
+	cout << strFNameOnly << " /c=99 unknownFlower0099.jpg\n";
+	cout << strFNameOnly << " /c=100 /s=5 unknownFlower0099.jpg\n";
+	cout << strFNameOnly << " /c=300 /wc=.5 /s=7 /ws=.5 unknownFlower0099.jpg\n";
 	cout << endl;
 	cout << "/c  = Length of radius that used in extracting color feature.\n";
 	cout << "/wc = Weight of color feature.\n";
 	cout << "/s  = Number of vectors of shape feature.\n";
 	cout << "/ws = Weight of shape feature.\n";
+	cout << "unknownFlower0099.jpg = File in testImage folder.\n";
 	exit(1);
 }
 #endif
